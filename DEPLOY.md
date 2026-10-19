@@ -111,14 +111,28 @@ GitHub（放代码）  →  Render（运行网站，给你网址）  →  Supaba
 
 ### 4.4 拿到两个密钥（关键）
 
-1. 左下角 **Project Settings**（齿轮图标）→ **API**
-2. 找到并复制这两项：
+1. 左下角 **Settings**（齿轮图标）→ **API Keys**
+   （新版后台没有单独的 "API" 页面了，所有密钥都在 **API Keys** 这一页）
+2. 这一页上会有两组密钥，**任选一组**即可，程序两种都支持：
 
-   - **Project URL**：形如 `https://abcdefghijklmnop.supabase.co`
-   - **Project API keys** 里的 **`service_role`** → 点 **Reveal** 后复制（很长一串）
+   **方式一：新版密钥（推荐）**
+   - 找 **Secret keys** 区域，复制 `sb_secret_...` 那一串
+   - 如果显示 "No secret keys"，点 **Create new secret key** 生成一个
 
-> 🔐 `service_role` 是最高权限的钥匙，**只能填到 Render 的环境变量里**。
-> 不要写进代码、不要发到群里、不要提交到 GitHub。填错位置网站会被别人改数据。
+   **方式二：旧版密钥**
+   - 找 **Legacy API keys** 区域 → **`service_role`** → 点 **Reveal** → 复制 `eyJ...` 开头的长串
+
+3. 同一个页面上方还有 **Project URL**，形如：
+   `https://dsmmazsshwqzecicbgso.supabase.co`
+
+⚠️ **绝对不要用 `anon` 或 `publishable` 密钥**。它们只有“匿名只读”权限，
+填上去网站会出现“加载失败 / 列表为空 / 发帖报错”。
+
+> 🔐 `service_role` / `sb_secret_...` 是最高权限的钥匙，**只能填到 Render 的环境变量里**。
+> 不要写进代码、不要发到群里、不要提交到 GitHub。
+
+程序会同时支持这两种密钥：旧版 JWT 走 `Authorization: Bearer`，新版 `sb_secret_` 走 `apikey` 头。
+所以你手上是哪种就用哪种，不用做额外处理。
 
 ---
 

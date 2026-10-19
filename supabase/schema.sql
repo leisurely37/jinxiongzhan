@@ -1,6 +1,7 @@
 -- ============================================================
 -- 金熊站 Supabase 初始化脚本
--- 用法：Supabase 控制台 → SQL Editor → 粘贴全文 → Run
+-- 用法：Supabase 控制台 → 左下角 SQL Editor → New query
+--       → 粘贴本文件全部内容 → 点 Run（或 Ctrl+Enter）
 -- 可重复执行，不会删除已有数据。
 -- ============================================================
 
@@ -81,9 +82,15 @@ alter table public.sessions  enable row level security;
 
 -- ---------- 文件桶 ----------
 -- public = true：图片/附件可以通过公开 URL 直接访问（头像、帖子配图需要）。
-insert into storage.buckets (id, name, public, file_size_limit)
-values ('uploads', 'uploads', true, 52428800)
-on conflict (id) do update set public = true;
+-- 用 exception 包住：某些项目不允许用 SQL 操作 storage，此时只提示，不影响建表。
+do $$
+begin
+  insert into storage.buckets (id, name, public, file_size_limit)
+  values ('uploads', 'uploads', true, 52428800)
+  on conflict (id) do update set public = true;
+exception when others then
+  raise notice '文件桶自动创建失败（可到 Storage 页面手动建一个名为 uploads 的 public 桶）：%', sqlerrm;
+end $$;
 
 -- 允许匿名读者通过 public URL 读取对象（写入仍然只允许 service_role）
 do $$
@@ -96,7 +103,14 @@ begin
     create policy "public read uploads" on storage.objects
       for select using (bucket_id = 'uploads');
   end if;
+exception when others then
+  raise notice 'storage 读取策略未创建（public 桶通常不需要）：%', sqlerrm;
 end $$;
 
--- ---------- 完成 ----------
-select '金熊站数据库初始化完成 ✅' as result;
+-- ---------- 结果自检 ----------
+select
+  (select count(*) from information_schema.tables
+     where table_schema = 'public'
+       and table_name in ('users','posts','likes','comments','messages','sessions')) as tables_created,
+  (select count(*) from storage.buckets where id = 'uploads') as bucket_ready,
+  'schema ready' as status;
