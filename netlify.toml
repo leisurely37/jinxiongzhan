@@ -1,0 +1,26 @@
+# Netlify 部署配置
+# 前端静态文件发布 public/，/api/* 交给 Serverless 函数处理。
+
+[build]
+  command = "npm install"
+  publish = "public"
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[functions]
+  node_bundler = "esbuild"
+
+# API 请求转给函数（force：不经过静态文件匹配，直接交给函数）
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+
+# 单页应用兜底：找不到静态文件时返回 index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

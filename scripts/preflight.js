@@ -27,14 +27,13 @@ async function main() {
     }
 
     try {
+      const keyHeaders = { apikey: config.supabaseKey };
+      if (config.supabaseKey.startsWith('eyJ')) {
+        keyHeaders.Authorization = 'Bearer ' + config.supabaseKey;
+      }
       const res = await fetch(
         config.supabaseUrl + '/storage/v1/bucket/' + encodeURIComponent(config.bucket),
-        {
-          headers: {
-            apikey: config.supabaseKey,
-            Authorization: 'Bearer ' + config.supabaseKey,
-          },
-        }
+        { headers: keyHeaders }
       );
       if (res.ok) {
         const info = await res.json();

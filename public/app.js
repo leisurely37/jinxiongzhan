@@ -382,7 +382,7 @@ function showCreatePost() {
       '<div class="form-group"><label>标题</label><input type="text" id="postTitle" placeholder="请输入标题" maxlength="100"></div>' +
       '<div class="form-group"><label>内容</label><textarea id="postContent" placeholder="分享你的想法..." rows="5"></textarea></div>' +
       '<div class="form-group"><label>上传图片/视频/文件（最多10个）</label>' +
-        '<div class="file-upload-area" onclick="document.getElementById(\'postFileInput\').click()">📁 点击选择文件或拖放到这里<br><small>支持图片、视频及各类文件，单文件最大50MB</small></div>' +
+        '<div class="file-upload-area" onclick="document.getElementById(\'postFileInput\').click()">📁 点击选择文件或拖放到这里<br><small>图片会自动压缩，单次总量最大 5MB，最多 10 个</small></div>' +
         '<input type="file" id="postFileInput" multiple accept="*/*" style="display:none;" onchange="handleFileSelect(event)">' +
         '<div class="file-preview" id="filePreview"></div>' +
       '</div>' +
@@ -405,7 +405,51 @@ function handleFileSelect(e) {
   handleFiles(e.target.files);
 }
 
-function handleFiles(files) {
+// Netlify 函数请求体上限约 6MB，这里按 5MB 控制总量；图片会先自动压缩
+var MAX_TOTAL_UPLOAD = 5 * 1024 * 1024;
+var MAX_SINGLE_UPLOAD = 5 * 1024 * 1024;
+
+// 把大图压到最长边 1600px 的 JPEG，通常能压到 300KB 以内
+function compressImage(file) {
+  return new Promise(function(resolve) {
+    var isImage = /^image\//.test(file.type);
+    if (!isImage || file.type === 'image/gif' || file.type === 'image/svg+xml') { return resolve(file); }
+    if (file.size <= 500 * 1024) { return resolve(file); }
+
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function() {
+      try {
+        var max = 1600;
+        var scale = Math.min(1, max / Math.max(img.width, img.height));
+        var canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(function(blob) {
+          URL.revokeObjectURL(url);
+          if (!blob || blob.size >= file.size) { return resolve(file); }
+          var name = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+          try {
+            resolve(new File([blob], name, { type: 'image/jpeg', lastModified: Date.now() }));
+          } catch (e) {
+            resolve(file);
+          }
+        }, 'image/jpeg', 0.82);
+      } catch (e) {
+        URL.revokeObjectURL(url);
+        resolve(file);
+      }
+    };
+    img.onerror = function() {
+      URL.revokeObjectURL(url);
+      resolve(file); // 比如 iPhone 的 HEIC，浏览器解不了就原样上传
+    };
+    img.src = url;
+  });
+}
+
+async function handleFiles(files) {
   var maxTotal = 10;
   if (selectedFiles.length + files.length > maxTotal) {
     showToast('最多上传' + maxTotal + '个文件');
@@ -413,7 +457,12 @@ function handleFiles(files) {
   }
   for (var i = 0; i < files.length; i++) {
     if (selectedFiles.length >= maxTotal) { break; }
-    selectedFiles.push(files[i]);
+    var file = await compressImage(files[i]);
+    if (file.size > MAX_SINGLE_UPLOAD) {
+      showToast('「' + file.name + '」超过 5MB，请换小一点的文件');
+      continue;
+    }
+    selectedFiles.push(file);
   }
   renderFilePreview();
 }
@@ -434,6 +483,11 @@ async function submitPost() {
 
   if (!title) { return showToast('请输入标题'); }
   if (!content) { return showToast('请输入内容'); }
+
+  var totalBytes = selectedFiles.reduce(function(sum, f) { return sum + f.size; }, 0);
+  if (totalBytes > MAX_TOTAL_UPLOAD) {
+    return showToast('文件总大小超过 5MB，请减少数量或换更小的图片');
+  }
 
   var btn = document.getElementById('submitPostBtn');
   btn.disabled = true;
