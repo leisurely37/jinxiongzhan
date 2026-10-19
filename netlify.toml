@@ -8,6 +8,8 @@
 
 [build.environment]
   NODE_VERSION = "22"
+  # 文档里出现项目 URL 不算泄露，跳过对说明文档的密钥扫描，避免误伤构建
+  SECRETS_SCAN_OMIT_PATHS = "DEPLOY.md,README.md"
 
 [functions]
   node_bundler = "esbuild"

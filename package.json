@@ -4,6 +4,7 @@
   "description": "金熊站 - 综合兴趣社区论坛",
   "main": "server.js",
   "scripts": {
+    "build": "echo no-build-step",
     "start": "node server.js",
     "dev": "node server.js",
     "seed": "node scripts/seed.js",

@@ -6,7 +6,7 @@
 
 | 项目 | 状态 |
 | --- | --- |
-| Supabase 项目 `dsmmazsshwqzecicbgso` | ✅ 已建好 |
+| Supabase 项目 | ✅ 已建好（Singapore 区） |
 | 6 张表 + `uploads` 存储桶 | ✅ 已建好，桶为 public |
 | 旧数据导入（7 个账号 / 6 篇帖子 / 4 评论 / 3 赞） | ✅ 已导入 |
 | GitHub 仓库 `leisurely37/jinxiongzhan` | ✅ 已创建（还差几个新文件，见第 1 步） |
@@ -67,7 +67,7 @@ C:\Users\35738\Desktop\金熊站-上传到GitHub
 
    | Key | Value |
    | --- | --- |
-   | `SUPABASE_URL` | `https://dsmmazsshwqzecicbgso.supabase.co` |
+   | `SUPABASE_URL` | `https://你的项目ID.supabase.co`（在 Supabase → Settings → API Keys 页面顶部复制） |
    | `SUPABASE_SERVICE_ROLE_KEY` | 你的 `sb_secret_...` |
 
 7. 点 **Deploy site**，等 1～3 分钟
